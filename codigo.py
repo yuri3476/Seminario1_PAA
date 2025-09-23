@@ -118,7 +118,7 @@ def kruskal_com_visualizacao(raw_graph_data):
 
     sorted_edges = sorted(raw_graph_data)
     
-    print("--- INÍCIO DO ALGORITMO DE KRUSKAL (Com Visualização) ---")
+    print("-- INÍCIO DO ALGORITMO DE KRUSKAL (Com Visualização) --")
     print(f"Total de vértices na rede: {num_nodes}")
     print("Arestas ordenadas por custo (latência):")
     for weight, u, v in sorted_edges:
