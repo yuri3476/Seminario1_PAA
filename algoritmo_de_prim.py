@@ -2,6 +2,13 @@ import heapq
 import os
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, PillowWriter
+from time import perf_counter  # adicionado para medir tempo
+
+# Ajustado: sempre exibir em ms quando < 1s para consistência visual
+def format_time(seconds: float) -> str:
+    if seconds < 1:
+        return f"{seconds*1000:.2f} ms"
+    return f"{seconds:.4f} s"
 
 # Problema: Empresa de internet conectando bairros com fibra óptica
 # Nós = Bairros da cidade
@@ -74,7 +81,7 @@ def prim_steps(graph, start=0):
     return steps
 
 # GIF
-def build_animation(steps, nodes, pos, unique_edges, interval_ms=1500):
+def build_animation(steps, nodes, pos, unique_edges, interval_ms=1500, algo_time=None):
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.set_aspect('equal')
     ax.axis('off')
@@ -144,6 +151,10 @@ def build_animation(steps, nodes, pos, unique_edges, interval_ms=1500):
             cost_msg = f"Rede: {' + '.join(edges_detail)} = R$ {total}"
 
         info_text.set_text(msg + "\n" + cost_msg)
+        if algo_time is not None:
+            ax.text(0.98, 0.02, f"Tempo alg.: {format_time(algo_time)}", transform=ax.transAxes,
+                    ha='right', va='bottom', fontsize=9, color='white',
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="#444C77", alpha=0.85))
         return []
 
     anim = FuncAnimation(fig, update, frames=len(steps),
@@ -156,8 +167,10 @@ def main():
     frames_dir = os.path.join(out_dir, "frames")
     os.makedirs(frames_dir, exist_ok=True)
 
+    start_algo = perf_counter()
     steps = prim_steps(graph, start=0)
-    fig, anim = build_animation(steps, nodes, pos, unique_edges)
+    algo_elapsed = perf_counter() - start_algo
+    fig, anim = build_animation(steps, nodes, pos, unique_edges, algo_time=algo_elapsed)
 
     gif_path = os.path.join(out_dir, "prim_animation.gif")
     print("Gerando GIF...")
@@ -179,6 +192,7 @@ def main():
         save_frame(i)
     
     print("Frames salvos em:", frames_dir)
+    print(f"Tempo (apenas algoritmo Prim): {format_time(algo_elapsed)}")
 
 if __name__ == "__main__":
     main()

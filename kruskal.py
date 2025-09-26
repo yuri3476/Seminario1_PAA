@@ -2,6 +2,17 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import os
 from matplotlib.animation import FuncAnimation, PillowWriter
+from time import perf_counter
+
+# Formatador adaptativo de tempo (igual lógica usada no Prim)
+def format_time(seconds: float) -> str:
+    if seconds < 1e-6:
+        return f"{seconds*1e9:.1f} ns"
+    if seconds < 1e-3:
+        return f"{seconds*1e6:.1f} µs"
+    if seconds < 1:
+        return f"{seconds*1e3:.2f} ms"
+    return f"{seconds:.4f} s"
 
 
 class UnionFind:
@@ -97,7 +108,7 @@ def draw_graph_step(G, pos, title, filename,
     plt.close()
 
 
-def create_kruskal_animation(G, pos, animation_steps, all_edges_for_drawing, interval_ms=2000):
+def create_kruskal_animation(G, pos, animation_steps, all_edges_for_drawing, interval_ms=2000, algo_time=None):
     """Cria a animação do algoritmo de Kruskal"""
     fig, ax = plt.subplots(figsize=(12, 9))
     ax.set_facecolor('#202B3B')
@@ -181,6 +192,10 @@ def create_kruskal_animation(G, pos, animation_steps, all_edges_for_drawing, int
         ax.text(0.5, 0.02, info_text, transform=ax.transAxes, ha='center', va='bottom',
                fontsize=14, color='white', weight='bold',
                bbox=dict(boxstyle="round,pad=0.6", facecolor="darkblue", alpha=0.8))
+        if algo_time is not None:
+            ax.text(0.98, 0.02, f"Tempo alg.: {format_time(algo_time)}", transform=ax.transAxes,
+                    ha='right', va='bottom', fontsize=12, color='white',
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="#444C77", alpha=0.85))
         
         return []
     
@@ -189,23 +204,22 @@ def create_kruskal_animation(G, pos, animation_steps, all_edges_for_drawing, int
     return fig, anim
 
 
-def save_kruskal_frames(fig, G, pos, animation_steps, all_edges_for_drawing, frames_dir):
-    """Salva frames individuais PNG"""
+def save_kruskal_frames(fig, G, pos, animation_steps, all_edges_for_drawing, frames_dir, algo_time=None):
+    """Salva cada frame da animação como imagem PNG, incluindo tempo do algoritmo se fornecido."""
     for i, step in enumerate(animation_steps):
-        plt.figure(figsize=(12, 9))
-        ax = plt.gca()
+        plt.clf()
+        ax = fig.add_subplot(111)
         ax.set_facecolor('#202B3B')
-        plt.gcf().patch.set_facecolor('#202B3B')
         ax.axis('off')
         
         # Título
-        plt.title(step['title'], fontsize=16, color='white', pad=20)
+        ax.set_title(step['title'], fontsize=16, color='white', pad=20)
         
         # Desenhar nós
-        nx.draw_networkx_nodes(G, pos, node_color='white', node_size=1000, edgecolors='gray')
-        nx.draw_networkx_labels(G, pos, font_size=12, font_weight='bold', font_color='black')
+        nx.draw_networkx_nodes(G, pos, ax=ax, node_color='white', node_size=1000, edgecolors='gray')
+        nx.draw_networkx_labels(G, pos, ax=ax, font_size=12, font_weight='bold', font_color='black')
         
-        # Desenhar arestas (mesmo código da animação)
+        # Desenhar arestas não selecionadas (cinza tracejado)
         mst_edge_tuples = [(u, v) for u, v, w in step['mst_edges']]
         eval_edge = step['evaluating_edge']
         reject_edge = step['rejected_edge']
@@ -218,61 +232,68 @@ def save_kruskal_frames(fig, G, pos, animation_steps, all_edges_for_drawing, fra
                 (u, v) != (reject_edge[:2] if reject_edge else (None, None)) and
                 (v, u) != (reject_edge[:2] if reject_edge else (None, None))):
                 
-                nx.draw_networkx_edges(G, pos, edgelist=[(u, v)], 
+                nx.draw_networkx_edges(G, pos, ax=ax, edgelist=[(u, v)], 
                                      edge_color='gray', width=1, style='dashed')
                 
+                # Peso da aresta
                 mid_x = (pos[u][0] + pos[v][0]) / 2
                 mid_y = (pos[u][1] + pos[v][1]) / 2
-                plt.text(mid_x, mid_y, str(data['weight']), color='gray', 
-                        fontsize=10, ha='center', va='center')
+                ax.text(mid_x, mid_y, str(data['weight']), color='gray', 
+                       fontsize=10, ha='center', va='center')
         
-        # Arestas da MST
+        # Desenhar arestas da MST (ciano)
         if step['mst_edges']:
             mst_edge_list = [(u, v) for u, v, w in step['mst_edges']]
-            nx.draw_networkx_edges(G, pos, edgelist=mst_edge_list, 
+            nx.draw_networkx_edges(G, pos, ax=ax, edgelist=mst_edge_list, 
                                  edge_color='#66FFFF', width=3)
             
+            # Pesos das arestas da MST
             for u, v, weight in step['mst_edges']:
                 mid_x = (pos[u][0] + pos[v][0]) / 2
                 mid_y = (pos[u][1] + pos[v][1]) / 2
-                plt.text(mid_x, mid_y, str(weight), color='#66FFFF', fontsize=12, 
-                        ha='center', va='center', weight='bold',
-                        bbox=dict(facecolor='#202B3B', edgecolor='none', boxstyle='round,pad=0.3'))
+                ax.text(mid_x, mid_y, str(weight), color='#66FFFF', fontsize=12, 
+                       ha='center', va='center', weight='bold',
+                       bbox=dict(facecolor='#202B3B', edgecolor='none', boxstyle='round,pad=0.3'))
         
-        # Aresta sendo avaliada
+        # Desenhar aresta sendo avaliada (amarelo)
         if eval_edge:
             u, v, weight = eval_edge
-            nx.draw_networkx_edges(G, pos, edgelist=[(u, v)], 
+            nx.draw_networkx_edges(G, pos, ax=ax, edgelist=[(u, v)], 
                                  edge_color='yellow', width=4)
             mid_x = (pos[u][0] + pos[v][0]) / 2
             mid_y = (pos[u][1] + pos[v][1]) / 2
-            plt.text(mid_x, mid_y, str(weight), color='yellow', fontsize=12, 
-                    ha='center', va='center', weight='bold',
-                    bbox=dict(facecolor='#202B3B', edgecolor='none', boxstyle='round,pad=0.3'))
+            ax.text(mid_x, mid_y, str(weight), color='yellow', fontsize=12, 
+                   ha='center', va='center', weight='bold',
+                   bbox=dict(facecolor='#202B3B', edgecolor='none', boxstyle='round,pad=0.3'))
         
-        # Aresta rejeitada
+        # Desenhar aresta rejeitada (vermelho tracejado)
         if reject_edge:
             u, v, weight = reject_edge
-            nx.draw_networkx_edges(G, pos, edgelist=[(u, v)], 
+            nx.draw_networkx_edges(G, pos, ax=ax, edgelist=[(u, v)], 
                                  edge_color='red', width=3, style='dashed')
             mid_x = (pos[u][0] + pos[v][0]) / 2
             mid_y = (pos[u][1] + pos[v][1]) / 2
-            plt.text(mid_x, mid_y, str(weight), color='red', fontsize=12, 
-                    ha='center', va='center', weight='bold',
-                    bbox=dict(facecolor='#202B3B', edgecolor='none', boxstyle='round,pad=0.3'))
+            ax.text(mid_x, mid_y, str(weight), color='red', fontsize=12, 
+                   ha='center', va='center', weight='bold',
+                   bbox=dict(facecolor='#202B3B', edgecolor='none', boxstyle='round,pad=0.3'))
         
         # Informação de custo
         info_text = f"Custo atual da MST: R$ {step['mst_cost']}"
-        plt.text(0.5, 0.02, info_text, transform=plt.gca().transAxes, ha='center', va='bottom',
-                fontsize=14, color='white', weight='bold',
-                bbox=dict(boxstyle="round,pad=0.6", facecolor="darkblue", alpha=0.8))
+        ax.text(0.5, 0.02, info_text, transform=ax.transAxes, ha='center', va='bottom',
+               fontsize=14, color='white', weight='bold',
+               bbox=dict(boxstyle="round,pad=0.6", facecolor="darkblue", alpha=0.8))
+        if algo_time is not None:
+            ax.text(0.98, 0.02, f"Tempo alg.: {format_time(algo_time)}", transform=ax.transAxes,
+                    ha='right', va='bottom', fontsize=12, color='white',
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="#444C77", alpha=0.85))
         
-        plt.savefig(os.path.join(frames_dir, f"frame_{i+1:02d}.png"), 
-                   facecolor='#202B3B', dpi=150, bbox_inches='tight')
-        plt.close()
+        frame_path = os.path.join(frames_dir, f"frame_{i:03d}.png")
+        plt.savefig(frame_path, dpi=100, bbox_inches='tight')
+    plt.close(fig)
 
 
 def kruskal_com_visualizacao(raw_graph_data):
+    start_total = perf_counter()
     # Criar diretório para os outputs
     out_dir = os.path.join(os.getcwd(), "kruskal_outputs")
     frames_dir = os.path.join(out_dir, "frames")
@@ -325,6 +346,7 @@ def kruskal_com_visualizacao(raw_graph_data):
 
     print("Avaliando cada aresta para adicionar à Árvore Geradora Mínima (AGM)...")
     
+    algo_start = perf_counter()
     for weight, u, v in sorted_edges:
         print(f"\n[{step_counter}] Avaliando aresta: '{u}' - '{v}' com custo {weight}")
         
@@ -382,10 +404,11 @@ def kruskal_com_visualizacao(raw_graph_data):
         'step_counter': step_counter,
         'mst_cost': mst_cost
     })
+    algo_elapsed = perf_counter() - algo_start
 
     # Criar animação
     print("\nGerando animação...")
-    fig, anim = create_kruskal_animation(G, pos, animation_steps, all_edges_for_drawing)
+    fig, anim = create_kruskal_animation(G, pos, animation_steps, all_edges_for_drawing, algo_time=algo_elapsed)
     
     # Salvar GIF
     gif_path = os.path.join(out_dir, "kruskal_animation.gif")
@@ -395,9 +418,12 @@ def kruskal_com_visualizacao(raw_graph_data):
     
     # Salvar frames individuais
     print("Salvando frames PNG...")
-    save_kruskal_frames(fig, G, pos, animation_steps, all_edges_for_drawing, frames_dir)
+    save_kruskal_frames(fig, G, pos, animation_steps, all_edges_for_drawing, frames_dir, algo_time=algo_elapsed)
     print(f"Frames salvos em: {frames_dir}")
 
+    total_elapsed = perf_counter() - start_total
+    print(f"Tempo (apenas algoritmo Kruskal): {format_time(algo_elapsed)}")
+    print(f"Tempo total (inclui geração de GIF e frames): {format_time(total_elapsed)}")
     print("\n--- RESULTADO FINAL ---")
     print("A Árvore Geradora Mínima é composta pelas seguintes conexões:")
     for u, v, weight in mst_edges:
@@ -410,7 +436,7 @@ def kruskal_com_visualizacao(raw_graph_data):
     print(f" - GIF: {gif_path}")
     print(f" - Frames PNG: {frames_dir}")
 
-    return mst_edges, mst_cost
+    return mst_edges, mst_cost, algo_elapsed, total_elapsed
 
 
 
@@ -432,4 +458,5 @@ print("Problema: Conectar todos os bairros com custo mínimo")
 print("Algoritmo: Kruskal (ordena arestas e evita ciclos)")
 print("="*60)
 
-minimum_spanning_tree, total_cost = kruskal_com_visualizacao(network_graph)
+minimum_spanning_tree, total_cost, algo_time, total_time = kruskal_com_visualizacao(network_graph)
+print(f"\nResumo de tempos:\n - Tempo algoritmo (Kruskal): {format_time(algo_time)}\n - Tempo total (com visualizações): {format_time(total_time)}")
