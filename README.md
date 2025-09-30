@@ -14,22 +14,14 @@ A apresentação completa do nosso trabalho, explicando a teoria por trás dos a
 
 ---
 
-## 📂 Estrutura do Repositório
 
-O projeto está organizado da seguinte forma:
+## 📄 Slides da Apresentação
 
-├── slides/
-│   └── seminario.pdf      # Slides da apresentação em PDF
+Os slides utilizados no seminário estão disponíveis para visualização e download. 
 
-├── codigo/
+➡️ **[Clique aqui para visualizar ou baixar os slides em PDF](./slides/seminario.pdf)**
 
-│   ├── kruskal.py         # Implementação do Algoritmo de Kruskal com visualização
-
-│   └── prim.py            # Implementação do Algoritmo de Prim com visualização
-
-└── README.md          
-
-
+     
 
 ---
 
