@@ -20,10 +20,15 @@ O projeto está organizado da seguinte forma:
 
 ├── slides/
 │   └── seminario.pdf      # Slides da apresentação em PDF
+
 ├── codigo/
+
 │   ├── kruskal.py         # Implementação do Algoritmo de Kruskal com visualização
+
 │   └── prim.py            # Implementação do Algoritmo de Prim com visualização
+
 └── README.md          
+
 
 
 ---
