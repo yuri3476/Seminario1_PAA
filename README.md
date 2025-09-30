@@ -10,7 +10,7 @@ O problema prático utilizado como exemplo é a otimização de uma rede de fibr
 
 A apresentação completa do nosso trabalho, explicando a teoria por trás dos algoritmos e demonstrando a execução dos códigos, está disponível no YouTube:
 
-▶️ **[LINK VÍDEO DO YOUTUBE]**
+▶️ **(https://youtu.be/RaRHn2IA7dk)**
 
 ---
 
