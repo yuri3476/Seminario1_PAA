@@ -4,7 +4,6 @@ import os
 from matplotlib.animation import FuncAnimation, PillowWriter
 from time import perf_counter
 
-# Formatador adaptativo de tempo (igual lógica usada no Prim)
 def format_time(seconds: float) -> str:
     if seconds < 1e-6:
         return f"{seconds*1e9:.1f} ns"
@@ -109,7 +108,7 @@ def draw_graph_step(G, pos, title, filename,
 
 
 def create_kruskal_animation(G, pos, animation_steps, all_edges_for_drawing, interval_ms=2000, algo_time=None):
-    """Cria a animação do algoritmo de Kruskal"""
+    
     fig, ax = plt.subplots(figsize=(12, 9))
     ax.set_facecolor('#202B3B')
     fig.patch.set_facecolor('#202B3B')
@@ -122,10 +121,10 @@ def create_kruskal_animation(G, pos, animation_steps, all_edges_for_drawing, int
         
         step = animation_steps[frame]
         
-        # Título
+     
         ax.set_title(step['title'], fontsize=16, color='white', pad=20)
         
-        # Desenhar nós
+      
         nx.draw_networkx_nodes(G, pos, ax=ax, node_color='white', node_size=1000, edgecolors='gray')
         nx.draw_networkx_labels(G, pos, ax=ax, font_size=12, font_weight='bold', font_color='black')
         
@@ -205,7 +204,7 @@ def create_kruskal_animation(G, pos, animation_steps, all_edges_for_drawing, int
 
 
 def save_kruskal_frames(fig, G, pos, animation_steps, all_edges_for_drawing, frames_dir, algo_time=None):
-    """Salva cada frame da animação como imagem PNG, incluindo tempo do algoritmo se fornecido."""
+
     for i, step in enumerate(animation_steps):
         plt.clf()
         ax = fig.add_subplot(111)
@@ -438,13 +437,6 @@ def kruskal_com_visualizacao(raw_graph_data):
 
     return mst_edges, mst_cost, algo_elapsed, total_elapsed
 
-
-
-
-# Problema: Rede de fibra óptica conectando bairros
-# Vértices = Bairros da cidade (A, B, C, D, E, F)
-# Arestas = Rotas possíveis de cabeamento
-# Pesos = Custo de instalação (em milhares de reais)
 network_graph = [
     (7, 'A', 'B'), (8, 'A', 'C'), (3, 'B', 'C'), (6, 'B', 'D'),
     (4, 'C', 'D'), (3, 'C', 'E'), (2, 'D', 'E'), (5, 'D', 'F'),

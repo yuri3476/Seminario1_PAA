@@ -2,27 +2,24 @@ import heapq
 import os
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, PillowWriter
-from time import perf_counter  # adicionado para medir tempo
+from time import perf_counter  
 
-# Ajustado: sempre exibir em ms quando < 1s para consistência visual
+
 def format_time(seconds: float) -> str:
     if seconds < 1:
         return f"{seconds*1000:.2f} ms"
     return f"{seconds:.4f} s"
 
-# Problema: Empresa de internet conectando bairros com fibra óptica
-# Nós = Bairros da cidade
-# Arestas = Rotas possíveis de cabeamento 
-# Pesos = Custo de instalação 
+
 nodes = ["A", "B", "C", "D", "E", "F"]  # Bairros da cidade
 
 pos = {
-    0: (0.0, 1.0),    # A
-    1: (-1.2, 0.3),   # B
-    2: (1.2, 0.3),    # C
-    3: (-0.7, -0.7),  # D
-    4: (0.7, -0.7),   # E
-    5: (0.0, -1.5)    # F
+    0: (0.0, 1.0),    
+    1: (-1.2, 0.3), 
+    2: (1.2, 0.3),    
+    3: (-0.7, -0.7), 
+    4: (0.7, -0.7),   
+    5: (0.0, -1.5)    
 }
 
 graph = {
@@ -42,7 +39,7 @@ for u in graph:
         if (a, b) not in unique_edges:
             unique_edges[(a, b)] = w
 
-# Passo a passo do Algoritmo de Prim
+
 def prim_steps(graph, start=0):
     visited = set()
     heap = []
